@@ -3,6 +3,7 @@
 #### Download and install:
 ``` bash
 git clone https://github.com/gg-dev-05/compile.git
+cd compile
 chmod +x code.sh
 ```
 #### Aliases (optional)
