@@ -5,9 +5,10 @@ where:
     -h  display help 
     -l  use -lpthread flag while compiling
     -d  don't delete the compiled file
+    -m  compile using mpi
     -f  specify input file"
 
-while getopts ":hf:ld" opt; do
+while getopts ":hf:ldm" opt; do
   case $opt in
     h) 
       echo "$usage"
@@ -24,6 +25,9 @@ while getopts ":hf:ld" opt; do
     d) 
       not_delete=1
       ;;
+    m) 
+      mpi=1
+      ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
       exit 1
@@ -37,9 +41,10 @@ done
 
 if [ -z "$file" ]
 then
-      echo "Please specify an input file using -f flag"
-      echo "./$(basename "$0") -f main.c"
-      exit
+  echo "$usage"
+  echo "Please specify an input file using -f flag"
+  echo "For eg. $ ./$(basename "$0") -f main.c"
+  exit
 fi
 
 if [ ! -f ./${file} ]; then
@@ -57,13 +62,19 @@ case $extension in
     echo "C File"
     echo "compiling ${fileName}"
 
-    if [ -z "$lpthread" ]; then
-      echo "gcc ${fileName}.c -o ${fileName}"
-      gcc ${fileName}.c -o ${fileName}
+    if [ ! -z "$mpi" ]; then
+      echo "mpicc ${fileName}.c -o ${fileName}"
+      mpicc ${fileName}.c -o ${fileName}
     else
-      echo "gcc ${fileName}.c -o ${fileName} -lpthread"
-      gcc ${fileName}.c -o ${fileName} -lpthread
+      if [ -z "$lpthread" ]; then
+        echo "gcc ${fileName}.c -o ${fileName}"
+        gcc ${fileName}.c -o ${fileName}
+      else
+        echo "gcc ${fileName}.c -o ${fileName} -lpthread"
+        gcc ${fileName}.c -o ${fileName} -lpthread
+      fi
     fi
+
 
     if [ ! -f ./${fileName} ]; then
     	echo "compilation failed!!"
@@ -72,22 +83,35 @@ case $extension in
     	echo "running ${file}"
     	echo "==============="
 
-    	./${fileName} {@:2}$
-    	echo
+      if [ ! -z "$mpi" ]; then
+        read -p "Enter no. of processors: " processors
+        mpirun -n $processors ./${fileName}
+        echo
+      else
+        ./${fileName} ${@:3}
+        echo
+      fi
     fi
     ;;
 
   "cpp")
+
     echo "C++ File"
     echo "compiling ${fileName}"
 
-    if [ -z "$lpthread" ]; then
-      echo "g++ ${fileName}.cpp -o ${fileName}"
-      g++ ${fileName}.cpp -o ${fileName}
+    if [ ! -z "$mpi" ]; then
+      echo "mpic++ ${fileName}.cpp -o ${fileName}"
+      mpic++ ${fileName}.cpp -o ${fileName}
     else
-      echo "g++ ${fileName}.cpp -o ${fileName} -lpthread"
-      g++ ${fileName}.cpp -o ${fileName} -lpthread
+      if [ -z "$lpthread" ]; then
+        echo "g++ ${fileName}.cpp -o ${fileName}"
+        g++ ${fileName}.cpp -o ${fileName}
+      else
+        echo "g++ ${fileName}.cpp -o ${fileName} -lpthread"
+        g++ ${fileName}.cpp -o ${fileName} -lpthread
+      fi
     fi
+
 
     if [ ! -f ./${fileName} ]; then
     	echo "compilation failed!!"
@@ -96,18 +120,20 @@ case $extension in
     	echo "running ${file}"
     	echo "==============="
 
-    	./${fileName} {@:2}$
-    	echo
+      if [ ! -z "$mpi" ]; then
+        read -p "Enter no. of processors: " processors
+        mpirun -n $processors ./${fileName}
+        echo
+      else
+        ./${fileName} ${@:3}
+        echo
+      fi
     fi
     ;;
 
-  "py")
-    echo "Python File"
-    python3 ${fileName}.py
-    ;;
-
   *)
-    echo "unsupported"
+    echo "unsupported file format"
+    echo "Can compile only c and cpp files"
     ;;
 esac
 
