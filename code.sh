@@ -1,32 +1,27 @@
 #!/bin/bash
-usage="$(basename "$0") [-ld] [-f filename] -- compile c, cpp files 
+echo "V2"
+usage="$(basename "$0") [-l linker] [-f filename] -- compile c, cpp files 
 
 where:
-    -h  display help 
-    -l  use -lpthread flag while compiling
-    -d  don't delete the compiled file
-    -m  compile using mpi
-    -f  specify input file"
-
-while getopts ":hf:ldm" opt; do
+    -h  display help
+    -l  linker
+    -f  file name"
+    
+while getopts ":hf:l:" opt; do
   case $opt in
     h) 
       echo "$usage"
       exit
       ;;
     f)
-      echo "Input File : $OPTARG" >&2
+      echo "Input File : $OPTARG"
       file=$OPTARG
       ;;
-    l)
-      echo "using lpthread flag"
-      lpthread=1
+    l)  
+      flags+=("$OPTARG")
       ;;
     d) 
       not_delete=1
-      ;;
-    m) 
-      mpi=1
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -38,6 +33,14 @@ while getopts ":hf:ldm" opt; do
       ;;
   esac
 done
+
+# allflags=""
+for val in "${flags[@]}"; do
+  allflags="$allflags -$val"
+done
+
+echo "$allflags"
+
 
 if [ -z "$file" ]
 then
@@ -61,20 +64,10 @@ case $extension in
   "c")
     echo "C File"
     echo "compiling ${fileName}"
+    
 
-    if [ ! -z "$mpi" ]; then
-      echo "mpicc ${fileName}.c -o ${fileName}"
-      mpicc ${fileName}.c -o ${fileName}
-    else
-      if [ -z "$lpthread" ]; then
-        echo "gcc ${fileName}.c -o ${fileName}"
-        gcc ${fileName}.c -o ${fileName}
-      else
-        echo "gcc ${fileName}.c -o ${fileName} -lpthread"
-        gcc ${fileName}.c -o ${fileName} -lpthread
-      fi
-    fi
-
+    echo "gcc ${fileName}.c -o ${fileName} $allflags"
+    gcc ${fileName}.c -o ${fileName} $allflags
 
     if [ ! -f ./${fileName} ]; then
     	echo "compilation failed!!"
@@ -82,36 +75,17 @@ case $extension in
     	echo "==============="
     	echo "running ${file}"
     	echo "==============="
-
-      if [ ! -z "$mpi" ]; then
-        read -p "Enter no. of processors: " processors
-        mpirun -n $processors ./${fileName}
-        echo
-      else
-        ./${fileName} ${@:3}
-        echo
-      fi
+      ./${fileName} ${@:3}
     fi
     ;;
 
   "cpp")
-
-    echo "C++ File"
+    echo "Cpp File"
     echo "compiling ${fileName}"
+    
 
-    if [ ! -z "$mpi" ]; then
-      echo "mpic++ ${fileName}.cpp -o ${fileName}"
-      mpic++ ${fileName}.cpp -o ${fileName}
-    else
-      if [ -z "$lpthread" ]; then
-        echo "g++ ${fileName}.cpp -o ${fileName}"
-        g++ ${fileName}.cpp -o ${fileName}
-      else
-        echo "g++ ${fileName}.cpp -o ${fileName} -lpthread"
-        g++ ${fileName}.cpp -o ${fileName} -lpthread
-      fi
-    fi
-
+    echo "g++ ${fileName}.c -o ${fileName} $allflags"
+    g++ ${fileName}.c -o ${fileName} $allflags
 
     if [ ! -f ./${fileName} ]; then
     	echo "compilation failed!!"
@@ -119,15 +93,7 @@ case $extension in
     	echo "==============="
     	echo "running ${file}"
     	echo "==============="
-
-      if [ ! -z "$mpi" ]; then
-        read -p "Enter no. of processors: " processors
-        mpirun -n $processors ./${fileName}
-        echo
-      else
-        ./${fileName} ${@:3}
-        echo
-      fi
+      ./${fileName} ${@:3}
     fi
     ;;
 
