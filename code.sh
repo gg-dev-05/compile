@@ -84,8 +84,8 @@ case $extension in
     echo "compiling ${fileName}"
     
 
-    echo "g++ ${fileName}.c -o ${fileName} $allflags"
-    g++ ${fileName}.c -o ${fileName} $allflags
+    echo "g++ ${fileName}.cpp -o ${fileName} $allflags"
+    g++ ${fileName}.cpp -o ${fileName} $allflags
 
     if [ ! -f ./${fileName} ]; then
     	echo "compilation failed!!"
